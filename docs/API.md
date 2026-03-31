@@ -465,7 +465,7 @@ Content-Type: application/json
         "xsecToken": "security_token_value",
         "title": "笔记标题",
         "desc": "笔记详细内容描述",
-        "type": "normal",
+        "type": "video",
         "time": 1702195200000,
         "ipLocation": "浙江",
         "user": {
@@ -481,6 +481,11 @@ Content-Type: application/json
           "collectedCount": "80",
           "commentCount": "50",
           "sharedCount": "20"
+        },
+        "video": {
+          "capa": {
+            "duration": 60
+          }
         },
         "imageList": [
           {
@@ -534,6 +539,7 @@ Content-Type: application/json
 - `note.time`: 笔记发布时间戳（毫秒）
 - `note.ipLocation`: 发布者 IP 归属地
 - `note.type`: 笔记类型
+- `note.video`: 视频笔记时有此字段，保留详情页原始视频对象；图文笔记通常为 null 或不存在
 - `note.interactInfo`: 互动信息
   - `liked`: 当前用户是否已点赞
   - `collected`: 当前用户是否已收藏

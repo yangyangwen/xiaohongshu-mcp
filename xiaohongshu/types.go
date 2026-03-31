@@ -102,6 +102,7 @@ type FeedDetail struct {
 	IPLocation   string            `json:"ipLocation"`
 	User         User              `json:"user"`
 	InteractInfo InteractInfo      `json:"interactInfo"`
+	Video        map[string]any    `json:"video,omitempty"` // 保留详情页原始视频对象，避免上游字段被结构体裁剪
 	ImageList    []DetailImageInfo `json:"imageList"`
 }
 

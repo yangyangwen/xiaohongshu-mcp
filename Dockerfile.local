@@ -1,0 +1,5 @@
+FROM xpzouying/xiaohongshu-mcp:latest
+
+COPY .codex-local-build-app /app/app
+
+RUN chmod +x /app/app
