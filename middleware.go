@@ -1,7 +1,10 @@
 package main
 
 import (
+	"crypto/subtle"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -21,6 +24,51 @@ func corsMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+const authTokenEnvVar = "XHS_AUTH_TOKEN"
+
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method == http.MethodOptions {
+			c.Next()
+			return
+		}
+
+		expectedToken := strings.TrimSpace(os.Getenv(authTokenEnvVar))
+		if expectedToken == "" {
+			respondError(c, http.StatusServiceUnavailable, "AUTH_NOT_CONFIGURED",
+				"服务鉴权未配置", authTokenEnvVar+" is not set")
+			c.Abort()
+			return
+		}
+
+		providedToken, ok := extractBearerToken(c.GetHeader("Authorization"))
+		if !ok {
+			respondError(c, http.StatusUnauthorized, "UNAUTHORIZED",
+				"未授权访问", "Authorization 请求头格式必须为 Bearer <token>")
+			c.Abort()
+			return
+		}
+
+		if subtle.ConstantTimeCompare([]byte(providedToken), []byte(expectedToken)) != 1 {
+			respondError(c, http.StatusUnauthorized, "UNAUTHORIZED",
+				"未授权访问", "bearer token 无效")
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func extractBearerToken(header string) (string, bool) {
+	fields := strings.Fields(header)
+	if len(fields) != 2 || !strings.EqualFold(fields[0], "Bearer") || fields[1] == "" {
+		return "", false
+	}
+
+	return fields[1], true
 }
 
 // errorHandlingMiddleware 错误处理中间件

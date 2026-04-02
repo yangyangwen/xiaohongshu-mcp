@@ -1,7 +1,9 @@
 package main
 
 import (
+	neturl "net/url"
 	"net/http"
+	"strings"
 
 	"github.com/xpzouying/xiaohongshu-mcp/cookies"
 	"github.com/xpzouying/xiaohongshu-mcp/xiaohongshu"
@@ -9,6 +11,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
+
+func getRawURLQueryParam(c *gin.Context, key string) string {
+	rawQuery := c.Request.URL.RawQuery
+	prefix := key + "="
+	if strings.HasPrefix(rawQuery, prefix) {
+		rawValue := strings.TrimPrefix(rawQuery, prefix)
+		if decoded, err := neturl.QueryUnescape(rawValue); err == nil {
+			return decoded
+		}
+		return rawValue
+	}
+	return c.Query(key)
+}
 
 // respondError 返回错误响应
 func respondError(c *gin.Context, statusCode int, code, message string, details any) {
@@ -271,6 +286,45 @@ func (s *AppServer) replyCommentHandler(c *gin.Context) {
 }
 
 // healthHandler 健康检查
+// getFeedMetricsByURLHandler 根据笔记 URL 返回点赞/评论/分享/收藏四个字段
+func (s *AppServer) getFeedMetricsByURLHandler(c *gin.Context) {
+	var req FeedMetricsByURLRequest
+
+	switch c.Request.Method {
+	case http.MethodPost:
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respondError(c, http.StatusBadRequest, "INVALID_REQUEST",
+				"请求参数错误", err.Error())
+			return
+		}
+	default:
+		req.URL = getRawURLQueryParam(c, "url")
+	}
+
+	if strings.TrimSpace(req.URL) == "" {
+		respondError(c, http.StatusBadRequest, "MISSING_URL",
+			"缺少 url 参数", "url parameter is required")
+		return
+	}
+
+	result, err := s.xiaohongshuService.GetFeedMetricsByURL(c.Request.Context(), req.URL)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		code := "GET_FEED_METRICS_FAILED"
+		if isFeedMetricsInputError(err) {
+			statusCode = http.StatusBadRequest
+			code = "INVALID_URL"
+		}
+
+		respondError(c, statusCode, code,
+			"获取Feed互动数据失败", err.Error())
+		return
+	}
+
+	c.Set("account", "ai-report")
+	respondSuccess(c, result, "获取Feed互动数据成功")
+}
+
 func healthHandler(c *gin.Context) {
 	respondSuccess(c, map[string]any{
 		"status":    "healthy",

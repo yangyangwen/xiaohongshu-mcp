@@ -32,11 +32,12 @@ func setupRoutes(appServer *AppServer) *gin.Engine {
 			JSONResponse: true, // 支持 JSON 响应
 		},
 	)
-	router.Any("/mcp", gin.WrapH(mcpHandler))
-	router.Any("/mcp/*path", gin.WrapH(mcpHandler))
+	router.Any("/mcp", authMiddleware(), gin.WrapH(mcpHandler))
+	router.Any("/mcp/*path", authMiddleware(), gin.WrapH(mcpHandler))
 
 	// API 路由组
 	api := router.Group("/api/v1")
+	api.Use(authMiddleware())
 	{
 		api.GET("/login/status", appServer.checkLoginStatusHandler)
 		api.GET("/login/qrcode", appServer.getLoginQrcodeHandler)
@@ -47,6 +48,8 @@ func setupRoutes(appServer *AppServer) *gin.Engine {
 		api.GET("/feeds/search", appServer.searchFeedsHandler)
 		api.POST("/feeds/search", appServer.searchFeedsHandler)
 		api.POST("/feeds/detail", appServer.getFeedDetailHandler)
+		api.GET("/feeds/metrics", appServer.getFeedMetricsByURLHandler)
+		api.POST("/feeds/metrics", appServer.getFeedMetricsByURLHandler)
 		api.POST("/user/profile", appServer.userProfileHandler)
 		api.POST("/feeds/comment", appServer.postCommentHandler)
 		api.POST("/feeds/comment/reply", appServer.replyCommentHandler)

@@ -1,5 +1,7 @@
 package xiaohongshu
 
+import "encoding/json"
+
 // 小红书 Feed 相关的数据结构定义
 
 // FeedResponse 表示从 __INITIAL_STATE__ 中获取的完整 Feed 响应
@@ -54,6 +56,28 @@ type InteractInfo struct {
 
 	CollectedCount string `json:"collectedCount"`
 	Collected      bool   `json:"collected"`
+}
+
+// UnmarshalJSON keeps SharedCount compatible with both historical and current
+// field names returned by Xiaohongshu pages.
+func (i *InteractInfo) UnmarshalJSON(data []byte) error {
+	type alias InteractInfo
+	aux := struct {
+		*alias
+		ShareCount string `json:"shareCount"`
+	}{
+		alias: (*alias)(i),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	if i.SharedCount == "" && aux.ShareCount != "" {
+		i.SharedCount = aux.ShareCount
+	}
+
+	return nil
 }
 
 // Cover 表示封面信息

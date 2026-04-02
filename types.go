@@ -54,6 +54,11 @@ type FeedDetailRequest struct {
 	CommentConfig   *CommentLoadConfig `json:"comment_config,omitempty"`
 }
 
+// FeedMetricsByURLRequest 按笔记 URL 获取互动数据请求
+type FeedMetricsByURLRequest struct {
+	URL string `json:"url" binding:"required"`
+}
+
 type SearchFeedsRequest struct {
 	Keyword string                   `json:"keyword" binding:"required"`
 	Filters xiaohongshu.FilterOption `json:"filters,omitempty"`
@@ -63,6 +68,14 @@ type SearchFeedsRequest struct {
 type FeedDetailResponse struct {
 	FeedID string `json:"feed_id"`
 	Data   any    `json:"data"`
+}
+
+// FeedMetricsResponse 仅返回互动数字段
+type FeedMetricsResponse struct {
+	LikedCount     string `json:"liked_count"`
+	CommentCount   string `json:"comment_count"`
+	SharedCount    string `json:"shared_count"`
+	CollectedCount string `json:"collected_count"`
 }
 
 // PostCommentRequest 发表评论请求
